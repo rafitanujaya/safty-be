@@ -3,6 +3,7 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 
+import authRoutes from "./routes/auth.routes";
 import riskRoutes from "./routes/risk.routes";
 import eventsRoutes from "./routes/event.routes";
 import dashboardRoutes from "./routes/dashboard.routes";
@@ -19,6 +20,7 @@ app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
+app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/scan", riskRoutes);
 app.use("/api/v1/events", eventsRoutes);
 app.use("/api/v1/dashboard", dashboardRoutes);
