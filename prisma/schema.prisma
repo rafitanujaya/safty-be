@@ -1,0 +1,70 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Device {
+  id          String   @id @default(cuid())
+  deviceToken String   @unique
+  browser     String?
+  createdAt   DateTime @default(now())
+
+  events      Event[]
+  configs     Config[]
+  scans       ScanRequest[]
+}
+
+model Event {
+  id             String   @id @default(cuid())
+  deviceId       String
+  eventType      String
+  pageUrl        String?
+  domain         String?
+  riskScore      Int?
+  riskLevel      String?
+  actionTaken    String?
+  sourcePlatform String?
+  createdAt      DateTime @default(now())
+
+  device         Device   @relation(fields: [deviceId], references: [id])
+  reasons        EventReason[]
+}
+
+model EventReason {
+  id         String @id @default(cuid())
+  eventId    String
+  reasonCode String?
+  reasonText String
+  weight     Int?
+
+  event      Event  @relation(fields: [eventId], references: [id])
+}
+
+model ScanRequest {
+  id          String   @id @default(cuid())
+  deviceId    String
+  requestType String
+  payloadJson Json
+  resultJson  Json
+  createdAt   DateTime @default(now())
+
+  device      Device   @relation(fields: [deviceId], references: [id])
+}
+
+model Config {
+  id         String   @id @default(cuid())
+  deviceId   String
+  configJson Json
+  updatedAt  DateTime @updatedAt
+
+  device     Device   @relation(fields: [deviceId], references: [id])
+}
