@@ -4,8 +4,7 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -13,77 +12,26 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  name         String
-  email        String    @unique
-  passwordHash String
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id             String          @id @default(cuid())
+  username       String
+  email          String          @unique
+  avatar_url     String?
+  password       String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 
-  devices      Device[]
+  googleAccounts GoogleAccount[]
 }
 
-model Device {
-  id             String        @id @default(cuid())
-  userId         String?
-  deviceToken    String        @unique
-  deviceName     String?
-  browser        String?
-  browserVersion String?
-  os             String?
-  isActive       Boolean       @default(true)
-  lastSeenAt     DateTime?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-
-  user           User?         @relation(fields: [userId], references: [id])
-  events         Event[]
-  configs        Config[]
-  scans          ScanRequest[]
-}
-
-model Event {
+model GoogleAccount {
   id             String   @id @default(cuid())
-  deviceId       String
-  eventType      String
-  pageUrl        String?
-  domain         String?
-  riskScore      Int?
-  riskLevel      String?
-  actionTaken    String?
-  sourcePlatform String?
+  user_id        String   @unique
+  google_user_id String   @unique
+  email          String   @unique
+  name           String
+  avatar_url     String?
   createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  device         Device   @relation(fields: [deviceId], references: [id])
-  reasons        EventReason[]
-}
-
-model EventReason {
-  id         String @id @default(cuid())
-  eventId    String
-  reasonCode String?
-  reasonText String
-  weight     Int?
-
-  event      Event  @relation(fields: [eventId], references: [id])
-}
-
-model ScanRequest {
-  id          String   @id @default(cuid())
-  deviceId    String
-  requestType String
-  payloadJson Json
-  resultJson  Json
-  createdAt   DateTime @default(now())
-
-  device      Device   @relation(fields: [deviceId], references: [id])
-}
-
-model Config {
-  id         String   @id @default(cuid())
-  deviceId   String
-  configJson Json
-  updatedAt  DateTime @updatedAt
-
-  device     Device   @relation(fields: [deviceId], references: [id])
+  user           User     @relation(fields: [user_id], references: [id])
 }

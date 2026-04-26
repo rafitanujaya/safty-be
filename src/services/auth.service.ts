@@ -5,7 +5,7 @@ import { signToken } from "../utils/jwt.js";
 const SALT_ROUNDS = 10;
 
 export async function registerUser(data: {
-  name: string;
+  username: string;
   email: string;
   password: string;
 }) {
@@ -17,18 +17,19 @@ export async function registerUser(data: {
     throw new Error("Email is already registered");
   }
 
-  const passwordHash = await bcrypt.hash(data.password, SALT_ROUNDS);
+  const hashedPassword = await bcrypt.hash(data.password, SALT_ROUNDS);
 
   const user = await prisma.user.create({
     data: {
-      name: data.name,
+      username: data.username,
       email: data.email,
-      passwordHash,
+      password: hashedPassword,
     },
     select: {
       id: true,
-      name: true,
+      username: true,
       email: true,
+      avatar_url: true,
       createdAt: true,
     },
   });
@@ -46,14 +47,11 @@ export async function loginUser(data: { email: string; password: string }) {
     where: { email: data.email },
   });
 
-  if (!user) {
+  if (!user || !user.password) {
     throw new Error("Invalid email or password");
   }
 
-  const isPasswordValid = await bcrypt.compare(
-    data.password,
-    user.passwordHash,
-  );
+  const isPasswordValid = await bcrypt.compare(data.password, user.password);
 
   if (!isPasswordValid) {
     throw new Error("Invalid email or password");
@@ -67,8 +65,9 @@ export async function loginUser(data: { email: string; password: string }) {
   return {
     user: {
       id: user.id,
-      name: user.name,
+      username: user.username,
       email: user.email,
+      avatar_url: user.avatar_url,
       createdAt: user.createdAt,
     },
     token,
@@ -80,8 +79,9 @@ export async function getUserById(userId: string) {
     where: { id: userId },
     select: {
       id: true,
-      name: true,
+      username: true,
       email: true,
+      avatar_url: true,
       createdAt: true,
       updatedAt: true,
     },

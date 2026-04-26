@@ -20,10 +20,10 @@ app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
-app.use("/api/v1/auth", authRoutes);
-app.use("/api/v1/scan", riskRoutes);
-app.use("/api/v1/events", eventsRoutes);
-app.use("/api/v1/dashboard", dashboardRoutes);
-app.use("/api/v1/config", configRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/risk", riskRoutes);
+app.use("/api/events", eventsRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/config", configRoutes);
 
 export default app;
