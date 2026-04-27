@@ -5,7 +5,7 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ message: "Missing or invalid token" });
+    return next({ message: "Missing or invalid token", status: 401 });
   }
 
   const token = authHeader.split(" ")[1];
@@ -15,6 +15,6 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
     req.user = payload;
     next();
   } catch {
-    return res.status(401).json({ message: "Invalid or expired token" });
+    return next({ message: "Invalid or expired token", status: 401 });
   }
 }

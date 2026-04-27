@@ -8,6 +8,7 @@ import riskRoutes from "./routes/risk";
 import eventsRoutes from "./routes/event";
 import dashboardRoutes from "./routes/dashboard";
 import configRoutes from "./routes/config";
+import { errorHandler } from "./middlewares/errorHandler";
 
 const app = express();
 
@@ -25,5 +26,6 @@ app.use("/api/risk", riskRoutes);
 app.use("/api/events", eventsRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/config", configRoutes);
+app.use(errorHandler);
 
 export default app;

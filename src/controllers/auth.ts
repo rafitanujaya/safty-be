@@ -1,44 +1,48 @@
-import type { Request, Response } from "express";
+import type { Request, Response, NextFunction } from "express";
 import { registerUser, loginUser, getUserById } from "../services/auth.js";
 
-export async function register(req: Request, res: Response) {
+export async function register(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   try {
     const result = await registerUser(req.body);
     return res.status(201).json(result);
   } catch (error) {
-    return res.status(400).json({
-      message: error instanceof Error ? error.message : "Registration failed",
-    });
+    next(error);
   }
 }
 
-export async function login(req: Request, res: Response) {
+export async function login(req: Request, res: Response, next: NextFunction) {
   try {
     const result = await loginUser(req.body);
     return res.json(result);
   } catch (error) {
-    return res.status(401).json({
-      message: error instanceof Error ? error.message : "Login failed",
-    });
+    next(error);
   }
 }
 
-export async function me(req: Request, res: Response) {
+export async function me(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user?.userId;
 
     if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
+      const err = new Error("Unauthorized");
+      (err as any).status = 401;
+      throw err;
     }
 
     const user = await getUserById(userId);
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      const err = new Error("User not found");
+      (err as any).status = 404;
+      throw err;
     }
 
     return res.json(user);
-  } catch {
-    return res.status(500).json({ message: "Failed to fetch user" });
+  } catch (error) {
+    next(error);
   }
 }
