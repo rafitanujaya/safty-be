@@ -3,11 +3,11 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 
-import authRoutes from "./routes/auth.routes";
-import riskRoutes from "./routes/risk.routes";
-import eventsRoutes from "./routes/event.routes";
-import dashboardRoutes from "./routes/dashboard.routes";
-import configRoutes from "./routes/config.routes";
+import authRoutes from "./routes/auth";
+import riskRoutes from "./routes/risk";
+import eventsRoutes from "./routes/event";
+import dashboardRoutes from "./routes/dashboard";
+import configRoutes from "./routes/config";
 
 const app = express();
 

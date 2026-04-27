@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { scanPage, scanFormSubmit } from "../controllers/risk.controller";
+import { scanPage, scanFormSubmit } from "../controllers/risk";
 
 const router = Router();
 

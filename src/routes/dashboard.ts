@@ -1,8 +1,5 @@
 import { Router } from "express";
-import {
-  getSummary,
-  getRecentEvents,
-} from "../controllers/dashboard.controller";
+import { getSummary, getRecentEvents } from "../controllers/dashboard";
 
 const router = Router();
 

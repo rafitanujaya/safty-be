@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getConfig, updateConfig } from "../controllers/config.controller";
+import { getConfig, updateConfig } from "../controllers/config";
 
 const router = Router();
 
