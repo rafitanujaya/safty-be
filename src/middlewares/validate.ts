@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import type { Schema } from "joi";
 
-export const validateBody = (schema: Schema) => {
+const validateBody = (schema: Schema) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const { error } = schema.validate(req.body, { abortEarly: false });
 
@@ -15,3 +15,5 @@ export const validateBody = (schema: Schema) => {
     next();
   };
 };
+
+export { validateBody };

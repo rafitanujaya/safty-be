@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { verifyToken } from "../utils/jwt.js";
 
-export function authenticate(req: Request, res: Response, next: NextFunction) {
+const authenticate = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -17,4 +17,6 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
   } catch {
     return next({ message: "Invalid or expired token", status: 401 });
   }
-}
+};
+
+export { authenticate };

@@ -4,11 +4,11 @@ import { signToken } from "../utils/jwt.js";
 
 const SALT_ROUNDS = 10;
 
-export async function registerUser(data: {
+const registerUser = async (data: {
   username: string;
   email: string;
   password: string;
-}) {
+}) => {
   const existingUser = await prisma.user.findUnique({
     where: { email: data.email },
   });
@@ -40,9 +40,9 @@ export async function registerUser(data: {
   });
 
   return { user, token };
-}
+};
 
-export async function loginUser(data: { email: string; password: string }) {
+const loginUser = async (data: { email: string; password: string }) => {
   const user = await prisma.user.findUnique({
     where: { email: data.email },
   });
@@ -72,9 +72,9 @@ export async function loginUser(data: { email: string; password: string }) {
     },
     token,
   };
-}
+};
 
-export async function getUserById(userId: string) {
+const getUserById = async (userId: string) => {
   return prisma.user.findUnique({
     where: { id: userId },
     select: {
@@ -86,4 +86,6 @@ export async function getUserById(userId: string) {
       updatedAt: true,
     },
   });
-}
+};
+
+export { registerUser, loginUser, getUserById };

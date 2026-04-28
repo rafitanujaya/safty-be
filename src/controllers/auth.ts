@@ -1,29 +1,25 @@
 import type { Request, Response, NextFunction } from "express";
 import { registerUser, loginUser, getUserById } from "../services/auth.js";
 
-export async function register(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
+const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const result = await registerUser(req.body);
     return res.status(201).json(result);
   } catch (error) {
     next(error);
   }
-}
+};
 
-export async function login(req: Request, res: Response, next: NextFunction) {
+const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const result = await loginUser(req.body);
     return res.json(result);
   } catch (error) {
     next(error);
   }
-}
+};
 
-export async function me(req: Request, res: Response, next: NextFunction) {
+const me = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user?.userId;
 
@@ -45,4 +41,6 @@ export async function me(req: Request, res: Response, next: NextFunction) {
   } catch (error) {
     next(error);
   }
-}
+};
+
+export { register, login, me };

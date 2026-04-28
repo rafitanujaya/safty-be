@@ -13,11 +13,10 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan("dev"));
 
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok" });
-});
-
+// Routes
 app.use("/api/auth", authRoutes);
+
+// Middleware
 app.use(errorHandler);
 
 export default app;
