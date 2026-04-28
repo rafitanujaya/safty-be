@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import prisma from "../db/prisma.js";
+import { prisma } from "../db/prisma.js";
 import { signToken } from "../utils/jwt.js";
 
 const SALT_ROUNDS = 10;
