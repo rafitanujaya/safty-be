@@ -1,62 +1,41 @@
-import { Request, Response } from "express";
-import {
-  getOrCreateSettingsByUserId,
-  updateSettingsByUserId,
-} from "../services/setting";
+import { Request, Response, NextFunction } from "express";
+import * as settingService from "../services/setting";
+import { sendSuccess } from "../utils/response";
 
-const getSettings = async (req: Request, res: Response) => {
+export const getSettings = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    console.log(req.user);
-    const user = req.user;
-
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized",
-      });
-    }
-
-    const settings = await getOrCreateSettingsByUserId(user.userId);
-
-    return res.json({
-      success: true,
-      data: settings,
-    });
+    const userId = (req as any).user.userId;
+    const result = await settingService.getSettings(userId);
+    return sendSuccess(res, result);
   } catch (error) {
-    console.error("getSettings error:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: "Failed to get protection settings",
-    });
+    next(error);
   }
 };
 
-const updateSettings = async (req: Request, res: Response) => {
+export const updateSettings = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const user = req.user;
-
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized",
-      });
+    const userId = (req as any).user.userId;
+    
+    // Basic validation
+    if (req.body.riskThreshold !== undefined) {
+      if (typeof req.body.riskThreshold !== 'number' || req.body.riskThreshold < 0 || req.body.riskThreshold > 100) {
+        const err = new Error("riskThreshold must be a number between 0 and 100");
+        (err as any).status = 400;
+        throw err;
+      }
     }
 
-    const settings = await updateSettingsByUserId(user.userId, req.body);
+    if (req.body.themePreference !== undefined) {
+      if (!["LIGHT", "DARK", "SYSTEM"].includes(req.body.themePreference)) {
+        const err = new Error("themePreference must be LIGHT, DARK, or SYSTEM");
+        (err as any).status = 400;
+        throw err;
+      }
+    }
 
-    return res.json({
-      success: true,
-      data: settings,
-    });
+    const result = await settingService.updateSettings(userId, req.body);
+    return sendSuccess(res, result);
   } catch (error) {
-    console.error("updateSettings error:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: "Failed to update protection settings",
-    });
+    next(error);
   }
 };
-
-export { getSettings, updateSettings };

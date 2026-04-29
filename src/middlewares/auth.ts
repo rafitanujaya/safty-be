@@ -1,22 +1,28 @@
-import type { Request, Response, NextFunction } from "express";
-import { verifyToken } from "../utils/jwt.js";
+import { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
+import { sendError } from "../utils/response";
 
-const authenticate = (req: Request, res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return next({ message: "Missing or invalid token", status: 401 });
-  }
-
-  const token = authHeader.split(" ")[1];
-
+export const authenticate = (req: Request, res: Response, next: NextFunction) => {
   try {
-    const payload = verifyToken(token);
-    req.user = payload;
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return sendError(res, "Unauthorized", 401);
+    }
+    
+    const token = authHeader.split(" ")[1];
+    
+    const secret = process.env.JWT_SECRET || "default_secret";
+    const decoded = jwt.verify(token, secret) as any;
+    
+    // Attach user to req
+    (req as any).user = {
+      userId: decoded.userId,
+      email: decoded.email
+    };
+    
     next();
-  } catch {
-    return next({ message: "Invalid or expired token", status: 401 });
+  } catch (error) {
+    return sendError(res, "Invalid or expired token", 401);
   }
 };
-
-export { authenticate };

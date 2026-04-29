@@ -1,91 +1,93 @@
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 import { prisma } from "../db/prisma.js";
-import { signToken } from "../utils/jwt.js";
 
-const SALT_ROUNDS = 10;
+export const registerUser = async (data: any) => {
+  const { username, email, password } = data;
 
-const registerUser = async (data: {
-  username: string;
-  email: string;
-  password: string;
-}) => {
+  if (!username || !email || !password) {
+    const error = new Error("Missing required fields");
+    (error as any).status = 400;
+    throw error;
+  }
+
   const existingUser = await prisma.user.findUnique({
-    where: { email: data.email },
+    where: { email },
   });
 
   if (existingUser) {
-    throw new Error("Email is already registered");
+    const error = new Error("Email already exists");
+    (error as any).status = 409;
+    throw error;
   }
 
-  const hashedPassword = await bcrypt.hash(data.password, SALT_ROUNDS);
+  const hashedPassword = await bcrypt.hash(password, 10);
 
   const user = await prisma.user.create({
     data: {
-      username: data.username,
-      email: data.email,
+      username,
+      email,
       password: hashedPassword,
-    },
-    select: {
-      id: true,
-      username: true,
-      email: true,
-      avatar_url: true,
-      createdAt: true,
+      settings: {
+        create: {} // Default protection settings based on schema defaults
+      }
     },
   });
 
-  const token = signToken({
-    userId: user.id,
-    email: user.email,
-  });
+  const secret = process.env.JWT_SECRET || "default_secret";
+  const token = jwt.sign({ userId: user.id, email: user.email }, secret, { expiresIn: "7d" });
 
-  return { user, token };
+  const { password: _, ...userWithoutPassword } = user;
+
+  return { user: userWithoutPassword, token };
 };
 
-const loginUser = async (data: { email: string; password: string }) => {
+export const loginUser = async (data: any) => {
+  const { email, password } = data;
+
+  if (!email || !password) {
+    const error = new Error("Missing email or password");
+    (error as any).status = 400;
+    throw error;
+  }
+
   const user = await prisma.user.findUnique({
-    where: { email: data.email },
+    where: { email },
   });
 
   if (!user || !user.password) {
-    throw new Error("Invalid email or password");
+    const error = new Error("Invalid credentials");
+    (error as any).status = 401;
+    throw error;
   }
 
-  const isPasswordValid = await bcrypt.compare(data.password, user.password);
+  const isPasswordValid = await bcrypt.compare(password, user.password);
 
   if (!isPasswordValid) {
-    throw new Error("Invalid email or password");
+    const error = new Error("Invalid credentials");
+    (error as any).status = 401;
+    throw error;
   }
 
-  const token = signToken({
-    userId: user.id,
-    email: user.email,
-  });
+  const secret = process.env.JWT_SECRET || "default_secret";
+  const token = jwt.sign({ userId: user.id, email: user.email }, secret, { expiresIn: "7d" });
 
-  return {
-    user: {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      avatar_url: user.avatar_url,
-      createdAt: user.createdAt,
-    },
-    token,
-  };
+  const { password: _, ...userWithoutPassword } = user;
+
+  return { user: userWithoutPassword, token };
 };
 
-const getUserById = async (userId: string) => {
-  return prisma.user.findUnique({
+export const getUserById = async (userId: string) => {
+  const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: {
-      id: true,
-      username: true,
-      email: true,
-      avatar_url: true,
-      createdAt: true,
-      updatedAt: true,
-    },
   });
-};
 
-export { registerUser, loginUser, getUserById };
+  if (!user) {
+    const error = new Error("User not found");
+    (error as any).status = 404;
+    throw error;
+  }
+
+  const { password, ...userWithoutPassword } = user;
+  return userWithoutPassword;
+};

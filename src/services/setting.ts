@@ -1,74 +1,64 @@
-import { prisma } from "../db/prisma";
-import { ProtectionLevel } from "@prisma/client";
+import { prisma } from "../db/prisma.js";
 
-type UpdateSettingsInput = {
-  webFraudEnabled?: boolean;
-  phishingDetectionEnabled?: boolean;
-  safeLinkPreviewEnabled?: boolean;
-  sensitiveFormProtectionEnabled?: boolean;
-  fileProtectionEnabled?: boolean;
-  imageScanEnabled?: boolean;
-  protectionLevel?: ProtectionLevel;
-  notificationStyle?: string;
-};
-
-const getOrCreateSettingsByUserId = async (userId: string) => {
-  const existingSettings = await prisma.protectionSettings.findUnique({
-    where: {
-      userId,
-    },
+export const getSettings = async (userId: string) => {
+  let settings = await prisma.protectionSettings.findUnique({
+    where: { userId },
   });
 
-  if (existingSettings) {
-    return existingSettings;
+  if (!settings) {
+    settings = await prisma.protectionSettings.create({
+      data: { userId },
+    });
   }
 
-  return prisma.protectionSettings.create({
-    data: {
-      userId,
-      webFraudEnabled: true,
-      phishingDetectionEnabled: true,
-      safeLinkPreviewEnabled: true,
-      sensitiveFormProtectionEnabled: true,
-      fileProtectionEnabled: true,
-      imageScanEnabled: false,
-      protectionLevel: "BALANCED",
-      notificationStyle: "MINIMAL",
-    },
-  });
+  return {
+    realtimeProtection: settings.realtimeProtection,
+    formBlocking: settings.formBlocking,
+    downloadScanning: settings.downloadScanning,
+    trackerBlocking: settings.trackerBlocking,
+    redirectProtection: settings.redirectProtection,
+    riskThreshold: settings.riskThreshold,
+    themePreference: settings.themePreference,
+  };
 };
 
-const updateSettingsByUserId = async (
-  userId: string,
-  input: UpdateSettingsInput,
-) => {
-  return prisma.protectionSettings.upsert({
-    where: {
-      userId,
-    },
-    update: {
-      webFraudEnabled: input.webFraudEnabled,
-      phishingDetectionEnabled: input.phishingDetectionEnabled,
-      safeLinkPreviewEnabled: input.safeLinkPreviewEnabled,
-      sensitiveFormProtectionEnabled: input.sensitiveFormProtectionEnabled,
-      fileProtectionEnabled: input.fileProtectionEnabled,
-      imageScanEnabled: input.imageScanEnabled,
-      protectionLevel: input.protectionLevel,
-      notificationStyle: input.notificationStyle,
-    },
+export const updateSettings = async (userId: string, data: any) => {
+  const {
+    realtimeProtection,
+    formBlocking,
+    downloadScanning,
+    trackerBlocking,
+    redirectProtection,
+    riskThreshold,
+    themePreference,
+  } = data;
+
+  const updateData: any = {};
+
+  if (realtimeProtection !== undefined) updateData.realtimeProtection = realtimeProtection;
+  if (formBlocking !== undefined) updateData.formBlocking = formBlocking;
+  if (downloadScanning !== undefined) updateData.downloadScanning = downloadScanning;
+  if (trackerBlocking !== undefined) updateData.trackerBlocking = trackerBlocking;
+  if (redirectProtection !== undefined) updateData.redirectProtection = redirectProtection;
+  if (riskThreshold !== undefined) updateData.riskThreshold = riskThreshold;
+  if (themePreference !== undefined) updateData.themePreference = themePreference;
+
+  const updated = await prisma.protectionSettings.upsert({
+    where: { userId },
+    update: updateData,
     create: {
       userId,
-      webFraudEnabled: input.webFraudEnabled ?? true,
-      phishingDetectionEnabled: input.phishingDetectionEnabled ?? true,
-      safeLinkPreviewEnabled: input.safeLinkPreviewEnabled ?? true,
-      sensitiveFormProtectionEnabled:
-        input.sensitiveFormProtectionEnabled ?? true,
-      fileProtectionEnabled: input.fileProtectionEnabled ?? true,
-      imageScanEnabled: input.imageScanEnabled ?? false,
-      protectionLevel: input.protectionLevel ?? "BALANCED",
-      notificationStyle: input.notificationStyle ?? "MINIMAL",
-    },
+      ...updateData
+    }
   });
-};
 
-export { getOrCreateSettingsByUserId, updateSettingsByUserId };
+  return {
+    realtimeProtection: updated.realtimeProtection,
+    formBlocking: updated.formBlocking,
+    downloadScanning: updated.downloadScanning,
+    trackerBlocking: updated.trackerBlocking,
+    redirectProtection: updated.redirectProtection,
+    riskThreshold: updated.riskThreshold,
+    themePreference: updated.themePreference,
+  };
+};

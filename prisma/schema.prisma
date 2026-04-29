@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -12,38 +7,171 @@ datasource db {
 }
 
 model User {
-  id             String          @id @default(cuid())
-  username       String
-  email          String          @unique
-  avatar_url     String?
-  password       String?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  id        String   @id @default(cuid())
+  username  String
+  email     String   @unique
+  avatarUrl String?
+  password  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   googleAccounts GoogleAccount[]
-  settings            ProtectionSettings?
-  threatEvents        ThreatEvent[]
-  fileScans           FileScan[]
-  imageScans          ImageScan[]
+  settings       ProtectionSettings?
+  threatEvents   ThreatEvent[]
+  fileScans      FileScan[]
+  imageScans     ImageScan[]
 }
 
 model GoogleAccount {
-  id             String   @id @default(cuid())
-  user_id        String   @unique
-  google_user_id String   @unique
-  email          String   @unique
-  name           String
-  avatar_url     String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  googleUserId String   @unique
+  email        String   @unique
+  name         String
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  user           User     @relation(fields: [user_id], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-enum ProtectionLevel {
+model ProtectionSettings {
+  id                  String          @id @default(cuid())
+  userId              String          @unique
+  realtimeProtection  Boolean         @default(true)
+  formBlocking        Boolean         @default(true)
+  downloadScanning    Boolean         @default(true)
+  trackerBlocking     Boolean         @default(true)
+  redirectProtection  Boolean         @default(true)
+  riskThreshold       Int             @default(65)
+  themePreference     ThemePreference @default(SYSTEM)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ThreatCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  events ThreatEvent[]
+}
+
+model ThreatSource {
+  id         String   @id @default(cuid())
+  domain     String   @unique
+  reputation Int      @default(100)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  events ThreatEvent[]
+
+  @@index([domain])
+}
+
+model ThreatEvent {
+  id          String          @id @default(cuid())
+  userId      String
+  categoryId  String?
+  sourceId    String?
+
+  eventType   ThreatEventType
+  riskLevel   RiskLevel       @default(LOW)
+  riskScore   Int             @default(0)
+  actionTaken ActionTaken     @default(LOGGED)
+  status      EventStatus     @default(ACTIVE)
+
+  domain      String?
+  pageUrl     String?
+  message     String?
+
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category ThreatCategory? @relation(fields: [categoryId], references: [id])
+  source   ThreatSource?   @relation(fields: [sourceId], references: [id])
+
+  @@index([userId])
+  @@index([eventType])
+  @@index([riskLevel])
+  @@index([actionTaken])
+  @@index([createdAt])
+}
+
+model FileScan {
+  id            String      @id @default(cuid())
+  userId        String
+
+  fileName      String
+  fileType      String?
+  fileSize      Int?
+  riskScore     Int         @default(0)
+  riskLevel     RiskLevel   @default(LOW)
+  verdict       ScanVerdict @default(SAFE)
+  detectionNote String?
+  actionTaken   ActionTaken @default(LOGGED)
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([verdict])
+  @@index([riskLevel])
+  @@index([createdAt])
+}
+
+model ImageScan {
+  id            String      @id @default(cuid())
+  userId        String
+
+  imageName     String
+  imageType     String?
+  fileSize      Int?
+  riskScore     Int         @default(0)
+  riskLevel     RiskLevel   @default(LOW)
+  verdict       ScanVerdict @default(SAFE)
+  confidence    Float?
+  detectionNote String?
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([verdict])
+  @@index([riskLevel])
+  @@index([createdAt])
+}
+
+model ScamEducationContent {
+  id                String           @id @default(cuid())
+  title             String
+  summary           String?
+  content           String?
+  category          String
+  readTime          String?
+  imageUrl          String?
+  difficulty        Difficulty       @default(BEGINNER)
+  relatedThreatType ThreatEventType?
+
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([category])
+}
+
+enum ThemePreference {
   LIGHT
-  BALANCED
-  STRICT
+  DARK
+  SYSTEM
 }
 
 enum RiskLevel {
@@ -54,129 +182,41 @@ enum RiskLevel {
   CRITICAL
 }
 
-enum ScanResult {
-  SAFE
-  SUSPICIOUS
-  DANGEROUS
-}
-
 enum ThreatEventType {
-  PHISHING_DETECTED
-  SHORTLINK_EXPANDED
-  SENSITIVE_FORM_BLOCKED
-  FILE_SCANNED
-  IMAGE_SCANNED
-  WARNING_SHOWN
-  EXTRA_PROTECTION_ACTIVATED
+  PHISHING_PREVENTED
+  BLOCKED_DOWNLOAD
+  FORM_BLOCKED
+  TRACKER_BLOCKED
+  BACKGROUND_SCAN
+  MALICIOUS_REDIRECT
+  SUSPICIOUS_INTERACTION
+  FILE_SCAN
+  IMAGE_SCAN
 }
 
 enum ActionTaken {
   BLOCKED
-  WARNED
-  ALLOWED
-  SCANNED
-  CONTINUED_ANYWAY
+  WARNING
+  PASSED
+  QUARANTINED
+  LOGGED
 }
 
-model ProtectionSettings {
-  id                              String            @id @default(uuid())
-  userId                          String            @unique
-
-  webFraudEnabled                 Boolean           @default(true)
-  phishingDetectionEnabled        Boolean           @default(true)
-  safeLinkPreviewEnabled          Boolean           @default(true)
-  sensitiveFormProtectionEnabled  Boolean           @default(true)
-  fileProtectionEnabled           Boolean           @default(true)
-  imageScanEnabled                Boolean           @default(false)
-
-  protectionLevel                 ProtectionLevel   @default(BALANCED)
-  notificationStyle               String            @default("MINIMAL")
-
-  createdAt                       DateTime          @default(now())
-  updatedAt                       DateTime          @updatedAt
-
-  user                            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+enum EventStatus {
+  ACTIVE
+  RESOLVED
+  IGNORED
 }
 
-model ThreatEvent {
-  id              String           @id @default(uuid())
-  userId          String
-
-  eventType       ThreatEventType
-  title           String
-  description     String?
-  riskLevel       RiskLevel        @default(LOW)
-  riskScore       Int              @default(0)
-
-  reason          String?
-  sourceUrl       String?
-  domain          String?
-  actionTaken     ActionTaken      @default(SCANNED)
-
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-
-  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([eventType])
-  @@index([riskLevel])
-  @@index([createdAt])
+enum ScanVerdict {
+  SAFE
+  SUSPICIOUS
+  MALICIOUS
+  SCAM
 }
 
-model FileScan {
-  id              String       @id @default(uuid())
-  userId          String
-
-  fileName        String
-  fileType        String?
-  fileSize        Int?
-  riskScore       Int          @default(0)
-  scanResult      ScanResult   @default(SAFE)
-  detectedIssue   String?
-
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-
-  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([scanResult])
-}
-
-model ImageScan {
-  id                      String       @id @default(uuid())
-  userId                  String
-
-  imageName               String
-  imageType               String?
-  scanType                String?
-  riskScore               Int          @default(0)
-  result                  ScanResult   @default(SAFE)
-  manipulationIndicator   String?
-
-  createdAt               DateTime     @default(now())
-  updatedAt               DateTime     @updatedAt
-
-  user                    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([result])
-}
-
-model ScamEducationContent {
-  id                String            @id @default(uuid())
-
-  scamCategory      String
-  title             String
-  summary           String?
-  whyRisky          String?
-  howToAvoid        String?
-  relatedEventType  ThreatEventType?
-
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-
-  @@index([scamCategory])
-  @@index([relatedEventType])
+enum Difficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
 }

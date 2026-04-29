@@ -1,46 +1,31 @@
-import type { Request, Response, NextFunction } from "express";
-import { registerUser, loginUser, getUserById } from "../services/auth.js";
+import { Request, Response, NextFunction } from "express";
+import * as authService from "../services/auth";
+import { sendSuccess } from "../utils/response";
 
-const register = async (req: Request, res: Response, next: NextFunction) => {
+export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await registerUser(req.body);
-    return res.status(201).json(result);
+    const result = await authService.registerUser(req.body);
+    return sendSuccess(res, result, 201);
   } catch (error) {
     next(error);
   }
 };
 
-const login = async (req: Request, res: Response, next: NextFunction) => {
+export const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await loginUser(req.body);
-    return res.json(result);
+    const result = await authService.loginUser(req.body);
+    return sendSuccess(res, result);
   } catch (error) {
     next(error);
   }
 };
 
-const me = async (req: Request, res: Response, next: NextFunction) => {
+export const me = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.user?.userId;
-
-    if (!userId) {
-      const err = new Error("Unauthorized");
-      (err as any).status = 401;
-      throw err;
-    }
-
-    const user = await getUserById(userId);
-
-    if (!user) {
-      const err = new Error("User not found");
-      (err as any).status = 404;
-      throw err;
-    }
-
-    return res.json(user);
+    const userId = (req as any).user?.userId;
+    const user = await authService.getUserById(userId);
+    return sendSuccess(res, user);
   } catch (error) {
     next(error);
   }
 };
-
-export { register, login, me };
