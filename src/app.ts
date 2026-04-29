@@ -6,6 +6,7 @@ import morgan from "morgan";
 import authRoutes from "./routes/auth";
 import settingRoutes from "./routes/setting";
 import eventRoutes from "./routes/event";
+import overviewRoutes from "./routes/overview";
 import { errorHandler } from "./middlewares/errorHandler";
 
 const app = express();
@@ -19,6 +20,7 @@ app.use(morgan("dev"));
 app.use("/api/auth", authRoutes);
 app.use("/api/setting", settingRoutes);
 app.use("/api/event", eventRoutes);
+app.use("/api/overview", overviewRoutes);
 
 // Middleware
 app.use(errorHandler);
